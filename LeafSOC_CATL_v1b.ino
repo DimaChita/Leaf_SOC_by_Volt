@@ -206,7 +206,7 @@ void loop() {
     
    Setup_mode_check();
    
-   if (Page == 1  || Page == 2  || Page == 3  || Page == 4  || Page == 5)
+   if (Page >=1 && Page <= 5)
     { 
       byte data[8] = {0x02, 0x21, 0x04, 0xff, 0xff, 0xff, 0xff, 0xff};
       byte data2[8] = {0x30, 0x01, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff};
@@ -247,7 +247,7 @@ void loop() {
           if (MinBattTemp < -10)     BattTempFactor1 = 0.75F; 
          }
        } 
-    if (Page == 1  || Page == 2  || Page == 3  || Page == 4)
+    if (Page >=1 && Page <= 4)
     { 
      if (rxId == 0x1db)                             // Читаем данные о текущем напряжении и токе разряда/заряда батареи
      {                  
@@ -345,171 +345,149 @@ void loop() {
   if ((millis() - LCDMillis) > LCDInterval)
   {                                                                             //Проверяем, выдержан ли интервал обновления информации на дисплее
     LCDMillis = millis();  
-    if (Page == 0) 
-    {                                
-      EEPROM.update(EEPROMaddr0, 1);                                            // Перезагрузка Arduino
-      resetFunc();
-    }
-    else if (Page == 1) 
-    {   
+    switch (Page) 
+    { 
+      case 0:                               
+        EEPROM.update(EEPROMaddr0, 1);                                            // Перезагрузка Arduino
+        resetFunc();
+      case 1:  
+        u8g2.firstPage();
+        do 
+        {
+          u8g2.drawXBMP( 0, 0, bitmap_width, bitmap_height, battery_large_bits);  // Прорисовка батареи
+          u8g2.setFont(u8g2_font_logisoso24_tr);                                  // Установка шрифта
+          u8g2.setCursor(41, 33);
+          dtostrf(ActSocPct, 3, 0, buffer);
+          u8g2.print((ActSocPct <= 0) ? "---" : buffer);
+          u8g2.setFont(u8g2_font_10x20_t_cyrillic);                               // Установка шрифта с кириллицей
+          u8g2.setCursor(36, LINE3);
+          dtostrf(ActSockWh, 3, 1, buffer);
+          u8g2.print((ActSockWh <= 0) ? "---" : buffer);
+          u8g2.print(" кВтч");
+        } while ( u8g2.nextPage() );
+      case 2:
+        u8g2.firstPage();
+        do 
+        {
+          u8g2.drawXBM( 0, 40, 56, 24, battery_solid_bits);                          // Прорисовка батареи
+          u8g2.setCursor(79, 27);  
+          dtostrf(range, 3, 0, buffer);
+          u8g2.print((range <= 0) ? "---" : buffer);
+          u8g2.setCursor(0, 27);   
+          u8g2.print("ОСТАТОК:");
+          u8g2.setCursor(110, 27); 
+          u8g2.print("км");
+          u8g2.setCursor(5, LINE3);
+          u8g2.setFontMode(1);                                                       // Чёрный тескт
+          u8g2.setDrawColor(2);                                                      // Белый фон
+          dtostrf(ActSocPct, 3, 0, buffer);
+          u8g2.print((ActSocPct <= 0) ? "---" : buffer);
+          u8g2.print("%"); 
+          u8g2.setFontMode(0);
+          u8g2.setCursor(70, LINE3);
+          if (ActSockWh >= 10) u8g2.setCursor(60, LINE3);
+          dtostrf(ActSockWh, 3, 1, buffer);
+          u8g2.print((ActSockWh <= 0) ? "---" : buffer);
+          u8g2.print("кВтч");    
+        } while ( u8g2.nextPage() );
+      case 3:
+        u8g2.firstPage();
+        do 
+        {
+          u8g2.setCursor(0, LINE1);
+          u8g2.print("При:");  
+          u8g2.print(km_per_kWh, 1);
+          u8g2.print("км/кВч"); 
+          u8g2.setFontMode(1);                          
+          u8g2.setDrawColor(2);                          
+          u8g2.drawBox(79, 20, 128, 21);
+          u8g2.setCursor(0, LINE2); 
+          u8g2.print("Остаток:");
+          dtostrf(range, 3, 0, buffer);
+          u8g2.print((range <= 0) ? "---" : buffer);
+          u8g2.print("км");
+          u8g2.setCursor(0, LINE3);
+          u8g2.print("ECO режим:"); 
+          u8g2.print((rawECOselected == 5) ? "ON" : "OFF");
+        } while ( u8g2.nextPage() );
+      case 4:
+        u8g2.firstPage();
+        do 
+        {
+          u8g2.drawHLine(0,  0, 128);
+          u8g2.drawHLine(0, 21, 128);
+          u8g2.drawHLine(0, 42, 128);
+          u8g2.drawHLine(0, 63, 128);
+          u8g2.drawVLine(0,   0, 63);
+          u8g2.drawVLine(63,  0, 63);
+          u8g2.drawVLine(127, 0, 63);
+          u8g2.setCursor(2, 19);
+          dtostrf(BattVolts, 3, 1, buffer); 
+          u8g2.print((BattVolts <= 0) ? "---" : buffer); 
+          u8g2.print("В"); 
+          u8g2.setCursor(67, 19); 
+          dtostrf(Amps, 3, 1, buffer);
+          u8g2.print(Amps); 
+          u8g2.print("А");
+          u8g2.setCursor(2, 40);
+          dtostrf(CPVaverage, 3, 0, buffer); 
+          u8g2.print((CPVaverage <= 0) ? "---" : buffer);  
+          u8g2.print("мВ"); 
+          u8g2.setCursor(67, 40);
+          dtostrf(kW, 3, 1, buffer); 
+          u8g2.print((kW <= 0) ? "---" : buffer); 
+          u8g2.print("кВ");
+          u8g2.setCursor(2, 61);
+          dtostrf(ActSockWh, 3, 1, buffer); 
+          u8g2.print((ActSockWh <= 0) ? "---" : buffer); 
+          u8g2.print("кВ"); 
+          u8g2.setCursor(77, 61); 
+          dtostrf(MinBattTemp, 3, 0, buffer);
+          u8g2.print((MinBattTemp <= 0) ? "---" : buffer); 
+          u8g2.print("°С");
+       } while ( u8g2.nextPage() );
+     case 5:
       u8g2.firstPage();
       do 
       {
-        u8g2.drawXBMP( 0, 0, bitmap_width, bitmap_height, battery_large_bits);  // Прорисовка батареи
-        //Setup_mode_check();
-        u8g2.setFont(u8g2_font_logisoso24_tr);                                  // Установка шрифта
-        u8g2.setCursor(41, 33);
-        dtostrf(ActSocPct, 3, 0, buffer);
-        u8g2.print((ActSocPct <= 0) ? "---" : buffer);
-        u8g2.setFont(u8g2_font_10x20_t_cyrillic);                               // Установка шрифта с кириллицей
-        u8g2.setCursor(36, LINE3);
-        dtostrf(ActSockWh, 3, 1, buffer);
-        u8g2.print((ActSockWh <= 0) ? "---" : buffer);
-        u8g2.print(" кВтч");
-        //CANSv = 0;
+        u8g2.drawHLine(0,  21, 128);
+        u8g2.drawHLine(0, 41, 128);
+        u8g2.drawHLine(0, 63, 128);
+        u8g2.drawVLine(0,   21, 63);
+        u8g2.drawVLine(63,  21, 63);
+        u8g2.drawVLine(127, 21, 63);
+        u8g2.setCursor(0, 20); 
+        u8g2.print("Темп-ура ввб:");
+        u8g2.setCursor(12, 39);
+        dtostrf(BattTemp1, 3, 0, buffer);  
+        u8g2.print(buffer);
+        u8g2.print("°С"); 
+        u8g2.setCursor(80, 39);
+        dtostrf(BattTemp2, 3, 0, buffer); 
+        u8g2.print(BattTemp2);
+        u8g2.print("°С");
+        u8g2.setCursor(12, 61); 
+        dtostrf(BattTemp3, 3, 0, buffer); 
+        u8g2.print((BattTemp3 <= 0) ? "---" : buffer);
+        u8g2.print("°С"); 
+        u8g2.setCursor(70, 61);
+        dtostrf(BattTemp4, 3, 0, buffer); 
+        u8g2.print((BattTemp4 <= 0) ? "---" : buffer);
+        u8g2.print("°С"); 
       } while ( u8g2.nextPage() );
-    }
-    else if (Page == 2)  
-    {
+    case 6:
       u8g2.firstPage();
       do 
       {
-       //Setup_mode_check();
-       u8g2.drawXBM( 0, 40, 56, 24, battery_solid_bits);                          // Прорисовка батареи
-       u8g2.setCursor(79, 27);  
-       dtostrf(range, 3, 0, buffer);
-       u8g2.print((range <= 0) ? "---" : buffer);
-       u8g2.setCursor(0, 27);   
-       u8g2.print("ОСТАТОК:");
-       u8g2.setCursor(110, 27); 
-       u8g2.print("км");
-       u8g2.setCursor(5, LINE3);
-       u8g2.setFontMode(1);                                                       // Чёрный тескт
-       u8g2.setDrawColor(2);                                                      // Белый фон
-       dtostrf(ActSocPct, 3, 0, buffer);
-       u8g2.print((ActSocPct <= 0) ? "---" : buffer);
-       u8g2.print("%"); 
-       u8g2.setFontMode(0);
-       u8g2.setCursor(70, LINE3);
-       if (ActSockWh >= 10) u8g2.setCursor(60, LINE3);
-       dtostrf(ActSockWh, 3, 1, buffer);
-       u8g2.print((ActSockWh <= 0) ? "---" : buffer);
-       u8g2.print("кВтч"); 
-       //CANSv = 0;    
-      } while ( u8g2.nextPage() );
-    }
-    else if (Page == 3)
-    {
-      u8g2.firstPage();
-      do 
-      {
-        //Setup_mode_check();
-        u8g2.setCursor(0, LINE1);
-        u8g2.print("При:");  
-        u8g2.print(km_per_kWh, 1);
-        u8g2.print("км/кВч"); 
-        u8g2.setFontMode(1);                          
-        u8g2.setDrawColor(2);                          
-        u8g2.drawBox(79, 20, 128, 21);
-        u8g2.setCursor(0, LINE2); 
-        u8g2.print("Остаток:");
-        dtostrf(range, 3, 0, buffer);
-        u8g2.print((range <= 0) ? "---" : buffer);
-        u8g2.print("км");
-        u8g2.setCursor(0, LINE3);
-        u8g2.print("ECO режим:"); 
-        u8g2.print((rawECOselected == 5) ? "ON" : "OFF");
-        //CANSv = 0;
-      } while ( u8g2.nextPage() );
-     }
-    else if (Page == 4) 
-    {
-      u8g2.firstPage();
-      do 
-      {
-       //Setup_mode_check();
-       u8g2.drawHLine(0,  0, 128);
-       u8g2.drawHLine(0, 21, 128);
-       u8g2.drawHLine(0, 42, 128);
-       u8g2.drawHLine(0, 63, 128);
-       u8g2.drawVLine(0,   0, 63);
-       u8g2.drawVLine(63,  0, 63);
-       u8g2.drawVLine(127, 0, 63);
-       u8g2.setCursor(2, 19);
-       dtostrf(BattVolts, 3, 1, buffer); 
-       u8g2.print((BattVolts <= 0) ? "---" : buffer); 
-       u8g2.print("В"); 
-       u8g2.setCursor(67, 19); 
-       dtostrf(Amps, 3, 1, buffer);
-       u8g2.print(Amps); 
-       u8g2.print("А");
-       u8g2.setCursor(2, 40);
-       dtostrf(CPVaverage, 3, 0, buffer); 
-       u8g2.print((CPVaverage <= 0) ? "---" : buffer);  
-       u8g2.print("мВ"); 
-       u8g2.setCursor(67, 40);
-       dtostrf(kW, 3, 1, buffer); 
-       u8g2.print((kW <= 0) ? "---" : buffer); 
-       u8g2.print("кВ");
-       u8g2.setCursor(2, 61);
-       dtostrf(ActSockWh, 3, 1, buffer); 
-       u8g2.print((ActSockWh <= 0) ? "---" : buffer); 
-       u8g2.print("кВ"); 
-       u8g2.setCursor(77, 61); 
-       dtostrf(MinBattTemp, 3, 0, buffer);
-       u8g2.print((MinBattTemp <= 0) ? "---" : buffer); 
-       u8g2.print("°С");
-      // CANSv = 0;
-     } while ( u8g2.nextPage() );
-    }
-    else if (Page == 5)
-    {
-      u8g2.firstPage();
-      do 
-      {
-       //Setup_mode_check();
-       u8g2.drawHLine(0,  21, 128);
-       u8g2.drawHLine(0, 41, 128);
-       u8g2.drawHLine(0, 63, 128);
-       u8g2.drawVLine(0,   21, 63);
-       u8g2.drawVLine(63,  21, 63);
-       u8g2.drawVLine(127, 21, 63);
-       u8g2.setCursor(0, 20); 
-       u8g2.print("Темп-ура ввб:");
-       u8g2.setCursor(12, 39);
-       dtostrf(BattTemp1, 3, 0, buffer);  
-       u8g2.print(buffer);
-       u8g2.print("°С"); 
-       u8g2.setCursor(80, 39);
-       dtostrf(BattTemp2, 3, 0, buffer); 
-       u8g2.print(BattTemp2);
-       u8g2.print("°С");
-       u8g2.setCursor(12, 61); 
-       dtostrf(BattTemp3, 3, 0, buffer); 
-       u8g2.print((BattTemp3 <= 0) ? "---" : buffer);
-       u8g2.print("°С"); 
-       u8g2.setCursor(70, 61);
-       dtostrf(BattTemp4, 3, 0, buffer); 
-       u8g2.print((BattTemp4 <= 0) ? "---" : buffer);
-       u8g2.print("°С"); 
-      } while ( u8g2.nextPage() );
-    }
-    else if (Page == 6) 
-    {
-      u8g2.firstPage();
-      do 
-      {
-        //Setup_mode_check();
         u8g2.setFontMode(0);
         u8g2.setCursor(0, LINE1); 
         u8g2.print("Настр.расхода");
         if (rawCCStatus1 == 0 && rawCCVentTarget == 152 && rawCCVentIntake == 9 && (rawGearPos == 2 ||rawGearPos == 3)) 
         {   
-          if (rawGearPos == 2)  {
-            onHeater = 1;                     // Если включена задняя скорость, настраивается зиминий расход с учетом потребления отопителя и можно редактировать расход в диапазоне 3.6 - 6.4 км/кВтч, без учета корректировки на ECO режим
-          }
-          else if (rawGearPos == 3)  {
-            onHeater = 0;                     // Если включена нейтраль,  можно редактировать расход в диапазоне 6.5 - 9.3 км/кВтч, без учета корректировки на ECO режим
+          switch (rawGearPos)  
+          {
+            case 2: onHeater = 1;                     // Если включена задняя скорость, настраивается зиминий расход с учетом потребления отопителя и можно редактировать расход в диапазоне 3.6 - 6.4 км/кВтч, без учета корректировки на ECO режим
+            case 3: onHeater = 0;                     // Если включена нейтраль,  можно редактировать расход в диапазоне 6.5 - 9.3 км/кВтч, без учета корректировки на ECO режим
           }
           int kHeater;
           kHeater = ((onHeater == 1)? -6 : 23);
@@ -531,12 +509,15 @@ void loop() {
           u8g2.print(km_per_kWh, 1);
         }
       } while ( u8g2.nextPage() );
+     default:
+        u8g2.setCursor(0, LINE1);
+        u8g2.print(" № Дисплея");  
+        u8g2.setCursor(0, LINE2); 
+        u8g2.print("не определён");
+        u8g2.setCursor(0, LINE3);
+        u8g2.print("вкл. обдув +/-"); 
     }
-  }
-
- // rawCCButtonPress2 = rawCCButtonPress;
- // rawGearPos2 = rawGearPos;
- // rawCCFanSpeed2 = rawCCFanSpeed; 
+  }  
 } // END MAIN LOOP
 
 
