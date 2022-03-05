@@ -131,14 +131,14 @@ void setup()
   } else {
     u8g2.firstPage();
     do {
-      u8g2.setFontMode(0);                      // Инверсировать шрифт
-      u8g2.setDrawColor(1);                     // Белый цвет экрана
-      u8g2.drawBox(0, 0, 128, 64);              // Рисование белого прямоугольника
-      u8g2.setDrawColor(0);
-      u8g2.setCursor(31, 18); 
-      u8g2.print("MCP2515");
-      u8g2.setCursor(3, 40); 
-      u8g2.print("(CAN module)");
+     // u8g2.setFontMode(0);                      // Инверсировать шрифт
+     // u8g2.setDrawColor(1);                     // Белый цвет экрана
+     // u8g2.drawBox(0, 0, 128, 64);              // Рисование белого прямоугольника
+      //u8g2.setDrawColor(0);
+      //u8g2.setCursor(31, 18); 
+      //u8g2.print("MCP2515");
+      //u8g2.setCursor(3, 40); 
+      //u8g2.print("(CAN module)");
       u8g2.setCursor(15, 61); 
       u8g2.print("ошибка MCP2515");
     } while ( u8g2.nextPage() );
@@ -181,8 +181,8 @@ void loop() {
   {                                             // Читаем и собираем данные из EV-CAN шины
     CAN0.readMsgBuf(&rxId, &len, rxBuf);       
 
-   if ((rxId & 0x40000000) != 0x40000000) 
-    {                                           // Читаем все данные кроме удалённых запросов и выбераем сообщения CAN, которые нас интересуют
+  // if ((rxId & 0x40000000) != 0x40000000) 
+  //  {                                           // Читаем все данные кроме удалённых запросов и выбераем сообщения CAN, которые нас интересуют
      if (rxId == 0x54b) 
       {                                         // Читаем данные о настройках климат контроля (100ms)
         rawCCStatus1 = (rxBuf[0]);
@@ -209,7 +209,7 @@ void loop() {
       {                                         // Читаем данные о настройках температуры климат контроля (100ms)
         rawCCSetpoint = (rxBuf[4]);             // 18.0C = 36, 18.5C = 37 ... 31.5.0C = 63, 32.0C = 64
       }  
-    } 
+   // } 
     
    Setup_mode_check();
    
@@ -352,10 +352,10 @@ void loop() {
  // {
   if ((millis() - LCDMillis) > LCDInterval)
   {                                                                             //Проверяем, выдержан ли интервал обновления информации на дисплее
-    LCDMillis = millis();  
+    LCDMillis = millis();
     switch (Page) 
     { 
-      case 0:                               
+      case 0:                              
         EEPROM.update(EEPROMaddr0, 1);                                            // Перезагрузка Arduino
         resetFunc();
         break;
@@ -363,6 +363,7 @@ void loop() {
         u8g2.firstPage();
         do 
         {
+          Setup_mode_check();
           u8g2.drawXBMP( 0, 0, bitmap_width, bitmap_height, battery_large_bits);  // Прорисовка батареи
           u8g2.setFont(u8g2_font_logisoso24_tr);                                  // Установка шрифта
           u8g2.setCursor(41, 33);
@@ -379,6 +380,7 @@ void loop() {
         u8g2.firstPage();
         do 
         {
+          Setup_mode_check();
           u8g2.drawXBM( 0, 40, 56, 24, battery_solid_bits);                          // Прорисовка батареи
           u8g2.setCursor(79, 27);  
           dtostrf(range, 3, 0, buffer);
@@ -405,6 +407,7 @@ void loop() {
         u8g2.firstPage();
         do 
         {
+          Setup_mode_check();
           u8g2.setCursor(0, LINE1);
           u8g2.print("При:");  
           u8g2.print(km_per_kWh, 1);
@@ -423,9 +426,44 @@ void loop() {
         } while ( u8g2.nextPage() );
         break;
       case 4:
-        u8g2.firstPage();
+       u8g2.firstPage();
+       do 
+       {
+        Setup_mode_check();
+        u8g2.drawHLine(0,  21, 128);
+        u8g2.drawHLine(0, 41, 128);
+        u8g2.drawHLine(0, 63, 128);
+        u8g2.drawVLine(0,   21, 63);
+        u8g2.drawVLine(63,  21, 63);
+        u8g2.drawVLine(127, 21, 63);
+        u8g2.setFontMode(1);                          
+        u8g2.setDrawColor(2);                          
+        u8g2.drawBox(0, 0, 128, 21);
+        u8g2.setCursor(5, 16); 
+        u8g2.print("Темп-ра ввб:");
+        u8g2.setCursor(12, 39);
+        dtostrf(BattTemp1, 3, 0, buffer);  
+        u8g2.print(buffer);
+        u8g2.print("°С"); 
+        u8g2.setCursor(80, 39);
+        dtostrf(BattTemp2, 3, 0, buffer); 
+        u8g2.print(BattTemp2);
+        u8g2.print("°С");
+        u8g2.setCursor(12, 61); 
+        dtostrf(BattTemp3, 3, 0, buffer); 
+        u8g2.print((BattTemp3 <= 0) ? "---" : buffer);
+        u8g2.print("°С"); 
+        u8g2.setCursor(70, 61);
+        dtostrf(BattTemp4, 3, 0, buffer); 
+        u8g2.print((BattTemp4 <= 0) ? "---" : buffer);
+        u8g2.print("°С"); 
+      } while ( u8g2.nextPage() );
+      break;
+    case 5:
+      u8g2.firstPage();
         do 
         {
+          Setup_mode_check();
           u8g2.drawHLine(0,  0, 128);
           u8g2.drawHLine(0, 21, 128);
           u8g2.drawHLine(0, 42, 128);
@@ -446,8 +484,8 @@ void loop() {
           u8g2.print((CPVaverage <= 0) ? "---" : buffer);  
           u8g2.print("мВ"); 
           u8g2.setCursor(67, 40);
-          dtostrf(kW, 3, 1, buffer); 
-          u8g2.print((kW <= 0) ? "---" : buffer); 
+         // dtostrf(kW, 3, 1, buffer); 
+          u8g2.print(kW, 1); 
           u8g2.print("кВ");
           u8g2.setCursor(2, 61);
           dtostrf(ActSockWh, 3, 1, buffer); 
@@ -459,40 +497,11 @@ void loop() {
           u8g2.print("°С");
        } while ( u8g2.nextPage() );
        break;
-     case 5:
-      u8g2.firstPage();
-      do 
-      {
-        u8g2.drawHLine(0,  21, 128);
-        u8g2.drawHLine(0, 41, 128);
-        u8g2.drawHLine(0, 63, 128);
-        u8g2.drawVLine(0,   21, 63);
-        u8g2.drawVLine(63,  21, 63);
-        u8g2.drawVLine(127, 21, 63);
-        u8g2.setCursor(0, 20); 
-        u8g2.print("Темп-ура ввб:");
-        u8g2.setCursor(12, 39);
-        dtostrf(BattTemp1, 3, 0, buffer);  
-        u8g2.print(buffer);
-        u8g2.print("°С"); 
-        u8g2.setCursor(80, 39);
-        dtostrf(BattTemp2, 3, 0, buffer); 
-        u8g2.print(BattTemp2);
-        u8g2.print("°С");
-        u8g2.setCursor(12, 61); 
-        dtostrf(BattTemp3, 3, 0, buffer); 
-        u8g2.print((BattTemp3 <= 0) ? "---" : buffer);
-        u8g2.print("°С"); 
-        u8g2.setCursor(70, 61);
-        dtostrf(BattTemp4, 3, 0, buffer); 
-        u8g2.print((BattTemp4 <= 0) ? "---" : buffer);
-        u8g2.print("°С"); 
-      } while ( u8g2.nextPage() );
-      break;
     case 6:
       u8g2.firstPage();
       do 
       {
+        Setup_mode_check();
         u8g2.setFontMode(0);
         u8g2.setCursor(0, LINE1); 
         u8g2.print("Настр.расхода");
@@ -549,8 +558,11 @@ void Setup_mode_check()
     Page = rawCCFanSpeed;
     EEPROM.update(EEPROMaddr0, rawCCFanSpeed);
     Draw_dotted_box();
-    u8g2.setCursor(3, LINE4); 
-    //u8g2.print(Page);
+    //u8g2.setFontMode(1);                          
+    //u8g2.setDrawColor(2);                          
+    //u8g2.drawBox(0, 50, 12, 64);
+    //u8g2.setCursor(3, 61); 
+    u8g2.print(Page);
   }
   else if (rawCCStatus1 == 0 && rawCCVentTarget == 152 && rawCCVentIntake == 9 && rawCCFanSpeed == 7) 
   {
@@ -571,7 +583,7 @@ void Draw_dotted_box()
     u8g2.drawPixel(127, i);
   }
   for (byte i = 0; i < 127; i += 5) 
-  {
+ {
     u8g2.drawPixel(i, 0);
     u8g2.drawPixel(i, 63);
   }
